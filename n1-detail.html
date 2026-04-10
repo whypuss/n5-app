@@ -134,8 +134,7 @@
             });
             tableHtml += '</table>';
             
-            const translation = (s.explanation || []).find(e => e.pos === '句子')?.note || 
-                               (s.explanation || []).find(e => e.pos === '句子')?.mean || '';
+            const translation = (s.explanation || []).find(e => e.pos === '句子')?.mean || '';
             
             const html = `
             <div class="sentence-card">
