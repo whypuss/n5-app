@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N2 句子</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        
+        .header { background: #fff; padding: 16px; border-bottom: 1px solid #e0e0e0; text-align: center; }
+        .header a { color: #c0392b; text-decoration: none; font-size: 14px; }
+        
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        .nav-btn { padding: 10px 20px; background: #c0392b; color: #fff; border: none; border-radius: 20px; font-size: 14px; cursor: pointer; text-decoration: none; }
+        .nav-btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .sentence-card { background: #fff; border-radius: 12px; padding: 24px; margin: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 800px; margin-left: auto; margin-right: auto; margin-bottom: 100px; }
+        
+        .sentence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #c0392b; }
+        .sentence-id { font-size: 16px; font-weight: bold; color: #333; }
+        .sentence-category { font-size: 14px; color: #c0392b; background: #fdf2f2; padding: 4px 12px; border-radius: 4px; font-weight: 600; }
+        
+        .japanese-main { text-align: center; font-size: 26px; color: #333; font-weight: bold; margin-bottom: 4px; line-height: 1.6; }
+        .japanese-hira { text-align: center; font-size: 16px; color: #c0392b; margin-bottom: 4px; letter-spacing: 2px; }
+        .japanese-ro { text-align: center; font-size: 13px; color: #888; margin-bottom: 20px; font-style: italic; letter-spacing: 1px; }
+        
+        .furigana-container { background: #fafafa; border: 2px solid #c0392b; border-radius: 12px; padding: 16px; margin-bottom: 16px; overflow-x: auto; }
+        .furigana-row { display: flex; justify-content: center; min-width: max-content; }
+        .furigana-item { display: flex; flex-direction: column; align-items: center; min-width: 44px; padding: 0 3px; }
+        .furigana-kanji { font-size: 20px; font-weight: bold; color: #333; }
+        .furigana-hira { font-size: 13px; color: #c0392b; line-height: 1.4; }
+        .furigana-ro { font-size: 10px; color: #999; font-style: italic; line-height: 1.2; }
+        .punc { color: #999; font-size: 18px; }
+        
+        .grammar-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 2px solid #c0392b; }
+        .grammar-table th { background: #c0392b; color: #fff; padding: 10px; text-align: left; }
+        .grammar-table td { border: 1px solid #ddd; padding: 10px; background: #fafafa; }
+        .word-col { font-weight: bold; color: #333; }
+        .mean-col { color: #c0392b; }
+        .pos-col { color: #666; font-size: 12px; }
+        .note-col { color: #888; font-size: 12px; font-style: italic; }
+        
+        .translation { margin-top: 16px; padding: 16px; background: #fdf2f2; border-radius: 8px; text-align: center; border-left: 4px solid #c0392b; }
+        .translation-text { font-size: 18px; color: #333; font-weight: 600; }
+        
+        .loading { text-align: center; padding: 40px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="n2-list.html">← 返回列表</a>
+    </div>
+    
+    <div id="content">
+        <div class="loading">載入中...</div>
+    </div>
+    
+    <div class="nav-bar" style="position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e0e0e0;">
+        <button id="prevBtn" class="nav-btn" onclick="changePage(-1)">← 上一句</button>
+        <span id="pageNum"></span>
+        <button id="nextBtn" class="nav-btn" onclick="changePage(1)">下一句 →</button>
+    </div>
+    
+    <script>
+        let sentences = [];
+        let currentIndex = 0;
+        
+        fetch('./n2-data.json?t=' + Date.now())
+            .then(r => r.json())
+            .then(data => {
+                sentences = data.sentences;
+                initFromURL();
+            });
+        
+        function initFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) currentIndex = parseInt(id);
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= sentences.length) currentIndex = sentences.length - 1;
+            render();
+        }
+        
+        function changePage(delta) {
+            currentIndex += delta;
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= sentences.length) currentIndex = sentences.length - 1;
+            render();
+            window.scrollTo(0, 0);
+        }
+        
+        function render() {
+            const s = sentences[currentIndex];
+            if (!s) return;
+            
+            document.getElementById('pageNum').textContent = `${currentIndex + 1} / ${sentences.length}`;
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === sentences.length - 1;
+            
+            // Build furigana display from sequence
+            const seq = s.sequence || [];
+            let furiganaHtml = '<div class="furigana-row">';
+            seq.forEach(item => {
+                const kanji = item[0] || '';
+                const hira = item[1] || '';
+                const roma = item[2] || '';
+                
+                if (['。', '、', '？', '！', '・'].includes(kanji)) {
+                    furiganaHtml += `<div class="furigana-item"><div class="punc">${kanji}</div></div>`;
+                } else if (kanji.trim() === '') {
+                    furiganaHtml += `<div class="furigana-item"><div style="width:8px"></div></div>`;
+                } else {
+                    furiganaHtml += `
+                    <div class="furigana-item">
+                        <div class="furigana-kanji">${kanji}</div>
+                        <div class="furigana-hira">${hira}</div>
+                        <div class="furigana-ro">${roma}</div>
+                    </div>`;
+                }
+            });
+            furiganaHtml += '</div>';
+            
+            let tableHtml = '<table class="grammar-table"><tr><th>單字</th><th>意思</th><th>詞性</th><th>說明</th></tr>';
+            (s.explanation || []).forEach(exp => {
+                if (exp.mean) {
+                    // Derive word from mean if empty (e.g., 【〜が早いか】...)
+                    let word = exp.word || '-';
+                    if (!exp.word && exp.mean) {
+                        const m = exp.mean.match(/【([^】]+)】/);
+                        if (m) word = m[1];
+                    }
+                    tableHtml += `<tr>
+                        <td class="word-col">${word}</td>
+                        <td class="mean-col">${exp.mean || '-'}</td>
+                        <td class="pos-col">${exp.pos || '-'}</td>
+                        <td class="note-col">${exp.note || '-'}</td>
+                    </tr>`;
+                }
+            });
+            tableHtml += '</table>';
+            
+            const translation = (s.explanation || []).find(e => e.pos === '句子')?.note || 
+                               (s.explanation || []).find(e => e.pos === '句子')?.mean || '';
+            
+            const html = `
+            <div class="sentence-card">
+                <div class="sentence-header">
+                    <span class="sentence-id">#${s.id || currentIndex + 1}</span>
+                    <span class="sentence-category">${s.category || ''} | ${s.tense || ''}</span>
+                </div>
+                
+                <div class="japanese-main">${seq.map(p => p[0]).join('')}</div>
+                
+                <div class="furigana-container">
+                    ${furiganaHtml}
+                </div>
+                
+                <div class="japanese-hira">${seq.filter(p => !['。', '、', '？', '！', '・'].includes(p[0])).map(p => p[1]).join(' ')}</div>
+                <div class="japanese-ro">${seq.filter(p => !['。', '、', '？', '！', '・'].includes(p[0])).map(p => p[2]).join(' ')}</div>
+                
+                ${tableHtml}
+                
+                ${translation ? `
+                <div class="translation">
+                    <div class="translation-text">${translation}</div>
+                </div>` : ''}
+            </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
