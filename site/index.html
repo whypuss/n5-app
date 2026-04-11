@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日語學習</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .home-container { text-align: center; padding: 40px; max-width: 500px; width: 100%; }
+        .title { font-size: 32px; color: #333; margin-bottom: 8px; }
+        .subtitle { font-size: 16px; color: #666; margin-bottom: 30px; }
+        
+        .manga-section { margin-bottom: 30px; }
+        .manga-title { font-size: 20px; color: #333; margin-bottom: 16px; font-weight: 600; }
+        
+        .manga-btn { display: block; padding: 16px 20px; color: #fff; text-decoration: none; border-radius: 12px; font-size: 18px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.2s, box-shadow 0.2s; }
+        .manga-btn:hover { transform: translateY(-2px); }
+        .manga-btn.hunter { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+        .manga-btn.hunter:hover { box-shadow: 0 6px 16px rgba(26,26,46,0.4); }
+        
+        .jlpt-section { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #ddd; }
+        .jlpt-title { font-size: 14px; color: #888; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .menu { display: flex; flex-direction: column; gap: 12px; }
+        .menu-btn { display: block; padding: 16px 20px; color: #fff; text-decoration: none; border-radius: 10px; font-size: 16px; font-weight: 600; box-shadow: 0 3px 10px rgba(0,0,0,0.15); transition: transform 0.2s; }
+        .menu-btn:hover { transform: translateY(-2px); }
+        .menu-btn.n5 { background: #4a90d9; }
+        .menu-btn.n4 { background: #e67e22; }
+        .menu-btn.n3 { background: #8e44ad; }
+        .menu-btn.n2 { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+        <h1 class="title">📚 日語學習</h1>
+        <p class="subtitle">選擇你的學習內容</p>
+        
+        <div class="manga-section">
+            <div class="manga-title">📖 漫畫名語</div>
+            <a href="hunter-list.html" class="manga-btn hunter">🦋 全職獵人</a>
+        </div>
+        
+        <div class="jlpt-section">
+            <div class="jlpt-title">JLPT 語法練習</div>
+            <div class="menu">
+                <a href="n5-list-v2.html" class="menu-btn n5">📖 N5 初級</a>
+                <a href="n4-list-v2.html" class="menu-btn n4">📚 N4 中級</a>
+                <a href="n3-list-v2.html" class="menu-btn n3">📗 N3 中上級</a>
+                <a href="n2-list.html" class="menu-btn n2">📕 N2 中上級</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

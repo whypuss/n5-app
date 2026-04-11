@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N5 句子</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        
+        .header { background: #fff; padding: 16px; border-bottom: 1px solid #e0e0e0; text-align: center; }
+        .header a { color: #2980b9; text-decoration: none; font-size: 14px; }
+        
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        .nav-btn { padding: 10px 20px; background: #2980b9; color: #fff; border: none; border-radius: 20px; font-size: 14px; cursor: pointer; text-decoration: none; }
+        .nav-btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .sentence-card { background: #fff; border-radius: 12px; padding: 24px; margin: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 800px; margin-left: auto; margin-right: auto; margin-bottom: 100px; }
+        
+        .sentence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #2980b9; }
+        .sentence-id { font-size: 16px; font-weight: bold; color: #333; }
+        .sentence-category { font-size: 14px; color: #2980b9; background: #eaf4fb; padding: 4px 12px; border-radius: 4px; font-weight: 600; }
+        
+        .japanese-main { text-align: center; font-size: 28px; color: #333; font-weight: bold; margin-bottom: 20px; }
+        
+        .japanese-section { background: #fff; border: 2px solid #2980b9; border-radius: 8px; padding: 16px; margin-bottom: 20px; overflow-x: auto; }
+        .vert-container { display: flex; justify-content: center; min-width: max-content; }
+        .vert-col { display: flex; flex-direction: column; align-items: center; min-width: 40px; padding: 0 4px; }
+        .vert-kanji { font-size: 22px; font-weight: bold; color: #333; }
+        .vert-hira { font-size: 14px; color: #2980b9; line-height: 1.4; }
+        .vert-ro { font-size: 12px; color: #999; font-style: italic; line-height: 1.4; }
+        
+        .grammar-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 2px solid #2980b9; }
+        .grammar-table th { background: #2980b9; color: #fff; padding: 10px; text-align: left; }
+        .grammar-table td { border: 1px solid #ddd; padding: 10px; background: #fafafa; }
+        .word-col { font-weight: bold; color: #333; }
+        .mean-col { color: #2980b9; }
+        .pos-col { color: #666; font-size: 12px; }
+        .note-col { color: #888; font-size: 12px; font-style: italic; }
+        
+        .translation { margin-top: 16px; padding: 16px; background: #eaf4fb; border-radius: 8px; text-align: center; border-left: 4px solid #2980b9; }
+        .translation-text { font-size: 18px; color: #333; font-weight: 600; }
+
+        .voice-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        .voice-btn { background: #2980b9; color: #fff; border: none; border-radius: 20px; padding: 8px 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .voice-btn:hover { background: #3498db; }
+        .voice-btn.playing { background: #27ae60; }
+        .voice-btn.playing:hover { background: #2ecc71; }
+        .voice-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .speed-label { font-size: 12px; color: #888; }
+        .speed-select { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+        .voice-status { font-size: 12px; color: #888; margin-left: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="n5-list-v2.html">← 返回列表</a>
+    </div>
+
+    <div class="voice-bar">
+        <audio id="audioPlayer" style="display:none"></audio>
+        <button id="voiceBtn" class="voice-btn" onclick="toggleVoice()">
+            <svg id="voiceIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span id="voiceLabel">播放</span>
+        </button>
+        <span class="voice-status" id="voiceStatus"></span>
+        <button id="replayBtn" class="voice-btn" onclick="replayVoice()" style="background:#8e44ad;padding:8px 14px;font-size:13px;">
+            🔄 重播
+        </button>
+    </div>
+
+    <div id="content">
+        <div style="text-align:center; padding: 40px;">載入中...</div>
+    </div>
+    
+    <div class="nav-bar" style="position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e0e0e0;">
+        <button id="prevBtn" class="nav-btn" onclick="changePage(-1)">← 上一句</button>
+        <span id="pageNum"></span>
+        <button id="nextBtn" class="nav-btn" onclick="changePage(1)">下一句 →</button>
+    </div>
+    
+    <script>
+        let sentences = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+
+        function getAudioURL(s) {
+            // Use pre-generated MP3 if available, fallback to Web Speech API
+            const id = s.id || (currentIndex + 1);
+            const mp3URL = `./site/audio/n5/${id}.mp3`;
+            return mp3URL;
+        }
+
+        function toggleVoice() {
+            const audio = document.getElementById('audioPlayer');
+            const s = sentences[currentIndex];
+            if (!s) return;
+
+            const id = s.id || (currentIndex + 1);
+            const mp3URL = `./site/audio/n5/${id}.mp3`;
+
+            if (isPlaying) {
+                audio.pause();
+                audio.currentTime = 0;
+                isPlaying = false;
+                updateVoiceBtn();
+                return;
+            }
+
+            // Try pre-generated MP3 first
+            audio.src = mp3URL;
+            audio.playbackRate = 1.0;
+            audio.play().then(() => {
+                isPlaying = true;
+                updateVoiceBtn();
+            }).catch(() => {
+                // Fallback to Web Speech API
+                useSpeechAPI(s.japanese || '');
+            });
+        }
+
+        function replayVoice() {
+            const audio = document.getElementById('audioPlayer');
+            const s = sentences[currentIndex];
+            if (!s) return;
+            const id = s.id || (currentIndex + 1);
+            audio.src = `./site/audio/n5/${id}.mp3`;
+            audio.playbackRate = 1.0;
+            isPlaying = true;
+            audio.play().then(() => {
+                updateVoiceBtn();
+            }).catch(() => {
+                isPlaying = false;
+                updateVoiceBtn();
+                useSpeechAPI(s.japanese || '');
+            });
+        }
+
+        function useSpeechAPI(text) {
+            if (!window.speechSynthesis) {
+                document.getElementById('voiceStatus').textContent = '瀏覽器不支援語音';
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            const jp = voices.find(v => v.lang.startsWith('ja'));
+            if (jp) u.voice = jp;
+            u.onstart = () => { isPlaying = true; updateVoiceBtn(); };
+            u.onend = () => { isPlaying = false; updateVoiceBtn(); };
+            u.onerror = () => { isPlaying = false; updateVoiceBtn(); };
+            window.speechSynthesis.speak(u);
+        }
+
+        function updateVoiceBtn() {
+            const btn = document.getElementById('voiceBtn');
+            const label = document.getElementById('voiceLabel');
+            const icon = document.getElementById('voiceIcon');
+            if (isPlaying) {
+                btn.classList.add('playing');
+                label.textContent = '停止';
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+            } else {
+                btn.classList.remove('playing');
+                label.textContent = '播放';
+                icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+            }
+        }
+
+        // Listen for audio end
+        document.getElementById('audioPlayer').addEventListener('ended', () => {
+            isPlaying = false;
+            updateVoiceBtn();
+        });
+
+        fetch('./n5-v2-data.json?t=' + Date.now())
+            .then(r => r.json())
+            .then(data => {
+                sentences = data.sentences;
+                initFromURL();
+            });
+        
+        function initFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) currentIndex = parseInt(id);
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= sentences.length) currentIndex = sentences.length - 1;
+            render();
+        }
+        
+        function changePage(delta) {
+            currentIndex += delta;
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= sentences.length) currentIndex = sentences.length - 1;
+            render();
+            window.scrollTo(0, 0);
+        }
+        
+        function render() {
+            const s = sentences[currentIndex];
+            if (!s) return;
+            
+            document.getElementById('pageNum').textContent = `${currentIndex + 1} / ${sentences.length}`;
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === sentences.length - 1;
+            
+            const seq = s.sequence || [];
+            let vertHtml = '<div class="vert-container">';
+            seq.forEach(item => {
+                const kanji = item[0] || '';
+                const hira = item[1] || '';
+                const roma = item[2] || '';
+                
+                if (['。', '、', '？', '！', '・', '…'].includes(kanji)) {
+                    vertHtml += `<div class="vert-col"><div class="vert-kanji" style="color:#ccc;font-size:18px;">${kanji}</div><div style="height:20px"></div><div style="height:16px"></div></div>`;
+                } else if (kanji.trim() === '') {
+                    vertHtml += `<div class="vert-col"><div style="width:8px"></div></div>`;
+                } else {
+                    vertHtml += `
+                    <div class="vert-col">
+                        <div class="vert-kanji">${kanji}</div>
+                        <div class="vert-hira">${hira}</div>
+                        <div class="vert-ro">${roma}</div>
+                    </div>`;
+                }
+            });
+            vertHtml += '</div>';
+            
+            let tableHtml = '<table class="grammar-table"><tr><th>單字</th><th>意思</th><th>詞性</th><th>說明</th></tr>';
+            (s.explanation || []).forEach(exp => {
+                if (exp.mean) {
+                    tableHtml += `<tr>
+                        <td class="word-col">${exp.word || '-'}</td>
+                        <td class="mean-col">${exp.mean || '-'}</td>
+                        <td class="pos-col">${exp.pos || '-'}</td>
+                        <td class="note-col">${exp.note || '-'}</td>
+                    </tr>`;
+                }
+            });
+            tableHtml += '</table>';
+            
+            const translation = s.translation || (s.explanation || []).find(e => e.pos === '句子')?.mean || '';
+            
+            const html = `
+            <div class="sentence-card">
+                <div class="sentence-header">
+                    <span class="sentence-id">#${s.id || currentIndex + 1}</span>
+                    <span class="sentence-category">${s.category || ''} | ${s.tense || ''}</span>
+                </div>
+                
+                <div class="japanese-main">${seq.map(p => p[0]).join('')}</div>
+                
+                <div class="japanese-section">
+                    ${vertHtml}
+                </div>
+                
+                ${tableHtml}
+                
+                ${translation ? `
+                <div class="translation">
+                    <div class="translation-text">${translation}</div>
+                </div>` : ''}
+            </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
