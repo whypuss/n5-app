@@ -43,11 +43,48 @@
         .translation-text { font-size: 18px; color: #333; font-weight: 600; }
 
         .source-info { margin-top: 12px; text-align: center; font-size: 12px; color: #666; }
+
+        .voice-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        .voice-btn { background: #c0392b; color: #fff; border: none; border-radius: 20px; padding: 8px 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .voice-btn:hover { background: #e74c3c; }
+        .voice-btn.playing { background: #27ae60; }
+        .voice-btn.playing:hover { background: #2ecc71; }
+        .voice-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .speed-label { font-size: 12px; color: #888; }
+        .speed-btn { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .speed-btn:hover { background: #e0e0e0; }
+        .speed-btn.active { background: #c0392b; color: #fff; border-color: #c0392b; }
+        .gender-btn { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+        .gender-btn:hover { background: #e0e0e0; }
+        .gender-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
+        .voice-status { font-size: 12px; color: #888; margin-left: 4px; }
     </style>
 </head>
 <body>
     <div class="header">
         <a href="n2-list.html">← 返回列表</a>
+    </div>
+
+    <div class="voice-bar">
+        <audio id="audioPlayer" style="display:none"></audio>
+        <button id="voiceBtn" class="voice-btn" onclick="toggleVoice()">
+            <svg id="voiceIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span id="voiceLabel">播放</span>
+        </button>
+        <span class="voice-status" id="voiceStatus"></span>
+        <button id="replayBtn" class="voice-btn" onclick="replayVoice()" style="background:#8e44ad;padding:8px 14px;font-size:13px;">
+            🔄 重播
+        </button>
+        <div style="flex:1"></div>
+        <button id="genderFemale" class="gender-btn active" onclick="setGender('f')">女</button>
+        <button id="genderMale" class="gender-btn" onclick="setGender('m')">男</button>
+        <div style="width:10px"></div>
+        <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
+        <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
+        <button class="speed-btn active" onclick="setSpeed(1.0)">1.0x</button>
+        <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
+        <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+        <button class="speed-btn" onclick="setSpeed(2.0)">2.0x</button>
     </div>
     
     <div id="content">
@@ -63,7 +100,118 @@
     <script>
         let sentences = [];
         let currentIndex = 0;
-        
+        let isPlaying = false;
+        let speedScale = 1.0;
+        let voiceGender = 'f';
+
+        function getAudioURL(s) {
+            const id = s.id || (currentIndex + 1);
+            return `./site/audio/n2/${voiceGender}/${id}.mp3`;
+        }
+
+        function toggleVoice() {
+            const audio = document.getElementById('audioPlayer');
+            const s = sentences[currentIndex];
+            if (!s) return;
+
+            if (isPlaying) {
+                audio.pause();
+                audio.currentTime = 0;
+                isPlaying = false;
+                updateVoiceBtn();
+                return;
+            }
+
+            audio.src = getAudioURL(s);
+            audio.playbackRate = speedScale;
+            audio.play().then(() => {
+                isPlaying = true;
+                updateVoiceBtn();
+            }).catch(() => {
+                isPlaying = false;
+                useSpeechAPI(s.japanese || '');
+            });
+        }
+
+        function replayVoice() {
+            const audio = document.getElementById('audioPlayer');
+            const s = sentences[currentIndex];
+            if (!s) return;
+            audio.src = getAudioURL(s);
+            audio.playbackRate = speedScale;
+            isPlaying = true;
+            audio.play().then(() => {
+                updateVoiceBtn();
+            }).catch(() => {
+                isPlaying = false;
+                updateVoiceBtn();
+                useSpeechAPI(s.japanese || '');
+            });
+        }
+
+        function setGender(g) {
+            voiceGender = g;
+            document.getElementById('genderFemale').classList.toggle('active', g === 'f');
+            document.getElementById('genderMale').classList.toggle('active', g === 'm');
+            if (isPlaying) {
+                const audio = document.getElementById('audioPlayer');
+                audio.pause();
+                audio.currentTime = 0;
+                isPlaying = false;
+                updateVoiceBtn();
+            }
+        }
+
+        function setSpeed(s) {
+            speedScale = s;
+            document.querySelectorAll('.speed-btn').forEach(btn => {
+                const btnSpeed = parseFloat(btn.textContent);
+                btn.classList.toggle('active', btnSpeed === s);
+            });
+            if (isPlaying) {
+                const audio = document.getElementById('audioPlayer');
+                audio.playbackRate = s;
+            }
+        }
+
+        function useSpeechAPI(text) {
+            if (!window.speechSynthesis) {
+                document.getElementById('voiceStatus').textContent = '瀏覽器不支援語音';
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = speedScale;
+            const voices = window.speechSynthesis.getVoices();
+            const jp = voices.find(v => v.lang.startsWith('ja'));
+            if (jp) u.voice = jp;
+            u.onstart = () => { isPlaying = true; updateVoiceBtn(); };
+            u.onend = () => { isPlaying = false; updateVoiceBtn(); };
+            u.onerror = () => { isPlaying = false; updateVoiceBtn(); };
+            window.speechSynthesis.speak(u);
+        }
+
+        function updateVoiceBtn() {
+            const btn = document.getElementById('voiceBtn');
+            const label = document.getElementById('voiceLabel');
+            const icon = document.getElementById('voiceIcon');
+            if (isPlaying) {
+                btn.classList.add('playing');
+                label.textContent = '停止';
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+            } else {
+                btn.classList.remove('playing');
+                label.textContent = '播放';
+                icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+            }
+        }
+
+        document.getElementById('audioPlayer').addEventListener('ended', () => {
+            isPlaying = false;
+            updateVoiceBtn();
+        });
+
         fetch('./n2-data.json')
             .then(r => r.json())
             .then(data => {
