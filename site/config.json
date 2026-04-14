@@ -1,0 +1,69 @@
+{
+  "version": 3,
+  "routes": [
+    {
+      "src": "^/(?:(.+)/)?index(?:\\.html)?/?$",
+      "headers": {
+        "Location": "/$1"
+      },
+      "status": 308
+    },
+    {
+      "src": "^/(.*)\\.html/?$",
+      "headers": {
+        "Location": "/$1"
+      },
+      "status": 308
+    },
+    {
+      "handle": "error"
+    },
+    {
+      "status": 404,
+      "src": "^(?!/api).*$",
+      "dest": "/404"
+    }
+  ],
+  "overrides": {
+    "hunter-detail.html": {
+      "path": "hunter-detail"
+    },
+    "hunter-list.html": {
+      "path": "hunter-list"
+    },
+    "index.html": {
+      "path": "index"
+    },
+    "n1-detail.html": {
+      "path": "n1-detail"
+    },
+    "n1-list.html": {
+      "path": "n1-list"
+    },
+    "n2-detail.html": {
+      "path": "n2-detail"
+    },
+    "n2-list.html": {
+      "path": "n2-list"
+    },
+    "n3-detail-v2.html": {
+      "path": "n3-detail-v2"
+    },
+    "n3-list-v2.html": {
+      "path": "n3-list-v2"
+    },
+    "n4-detail-v2.html": {
+      "path": "n4-detail-v2"
+    },
+    "n4-list-v2.html": {
+      "path": "n4-list-v2"
+    },
+    "n5-detail-v2.html": {
+      "path": "n5-detail-v2"
+    },
+    "n5-list-v2.html": {
+      "path": "n5-list-v2"
+    }
+  },
+  "crons": []
+}

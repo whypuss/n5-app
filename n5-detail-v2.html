@@ -48,12 +48,7 @@
         .voice-btn.playing:hover { background: #2ecc71; }
         .voice-btn:disabled { background: #ccc; cursor: not-allowed; }
         .speed-label { font-size: 12px; color: #888; }
-        .speed-btn { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .speed-btn:hover { background: #e0e0e0; }
-        .speed-btn.active { background: #2980b9; color: #fff; border-color: #2980b9; }
-        .gender-btn { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
-        .gender-btn:hover { background: #e0e0e0; }
-        .gender-btn.active { background: #e91e63; color: #fff; border-color: #e91e63; }
+        .speed-select { background: #f0f0f0; border: 1px solid #ccc; border-radius: 12px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
         .voice-status { font-size: 12px; color: #888; margin-left: 4px; }
     </style>
 </head>
@@ -72,16 +67,6 @@
         <button id="replayBtn" class="voice-btn" onclick="replayVoice()" style="background:#8e44ad;padding:8px 14px;font-size:13px;">
             🔄 重播
         </button>
-        <div style="flex:1"></div>
-        <button id="genderFemale" class="gender-btn active" onclick="setGender('f')">女</button>
-        <button id="genderMale" class="gender-btn" onclick="setGender('m')">男</button>
-        <div style="width:10px"></div>
-        <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
-        <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
-        <button class="speed-btn active" onclick="setSpeed(1.0)">1.0x</button>
-        <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
-        <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
-        <button class="speed-btn" onclick="setSpeed(2.0)">2.0x</button>
     </div>
 
     <div id="content">
@@ -98,18 +83,21 @@
         let sentences = [];
         let currentIndex = 0;
         let isPlaying = false;
-        let speedScale = 1.0;
-        let voiceGender = 'f';
 
         function getAudioURL(s) {
+            // Use pre-generated MP3 if available, fallback to Web Speech API
             const id = s.id || (currentIndex + 1);
-            return `./audio/n5/${voiceGender}/${id}.mp3`;
+            const mp3URL = `./site/audio/n5/${id}.mp3`;
+            return mp3URL;
         }
 
         function toggleVoice() {
             const audio = document.getElementById('audioPlayer');
             const s = sentences[currentIndex];
             if (!s) return;
+
+            const id = s.id || (currentIndex + 1);
+            const mp3URL = `./site/audio/n5/${id}.mp3`;
 
             if (isPlaying) {
                 audio.pause();
@@ -119,12 +107,14 @@
                 return;
             }
 
-            audio.src = getAudioURL(s);
-            audio.playbackRate = speedScale;
+            // Try pre-generated MP3 first
+            audio.src = mp3URL;
+            audio.playbackRate = 1.0;
             audio.play().then(() => {
                 isPlaying = true;
                 updateVoiceBtn();
             }).catch(() => {
+                // Fallback to Web Speech API
                 useSpeechAPI(s.japanese || '');
             });
         }
@@ -133,8 +123,9 @@
             const audio = document.getElementById('audioPlayer');
             const s = sentences[currentIndex];
             if (!s) return;
-            audio.src = getAudioURL(s);
-            audio.playbackRate = speedScale;
+            const id = s.id || (currentIndex + 1);
+            audio.src = `./site/audio/n5/${id}.mp3`;
+            audio.playbackRate = 1.0;
             isPlaying = true;
             audio.play().then(() => {
                 updateVoiceBtn();
@@ -143,31 +134,6 @@
                 updateVoiceBtn();
                 useSpeechAPI(s.japanese || '');
             });
-        }
-
-        function setGender(g) {
-            voiceGender = g;
-            document.getElementById('genderFemale').classList.toggle('active', g === 'f');
-            document.getElementById('genderMale').classList.toggle('active', g === 'm');
-            if (isPlaying) {
-                const audio = document.getElementById('audioPlayer');
-                audio.pause();
-                audio.currentTime = 0;
-                isPlaying = false;
-                updateVoiceBtn();
-            }
-        }
-
-        function setSpeed(s) {
-            speedScale = s;
-            document.querySelectorAll('.speed-btn').forEach(btn => {
-                const btnSpeed = parseFloat(btn.textContent);
-                btn.classList.toggle('active', btnSpeed === s);
-            });
-            if (isPlaying) {
-                const audio = document.getElementById('audioPlayer');
-                audio.playbackRate = s;
-            }
         }
 
         function useSpeechAPI(text) {

@@ -1,0 +1,5 @@
+audio/
+audio_edge_backup/
+*.mp3
+*.wav
+*.ogg
