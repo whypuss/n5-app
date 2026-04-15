@@ -292,9 +292,18 @@
             });
             vertHtml += '</div>';
             
-            // Build explanation table
+            // Extract sentence-level translation FIRST (before table)
+            let translation = s.translation || '';
+            if (!translation && s.explanation && s.explanation.length > 0) {
+                const fullSent = (s.explanation).find(e => e.pos === '句子' || e.pos === '文章' || e.pos === '短語');
+                translation = fullSent ? fullSent.mean : '';
+            }
+            
+            // Build explanation table — filter OUT sentence-level entries
             let tableHtml = '<table class="grammar-table"><tr><th>單字</th><th>意思</th><th>詞性</th><th>說明</th></tr>';
             (s.explanation || []).forEach(exp => {
+                // Skip sentence-level entries — they're shown as translation above
+                if (exp.pos === '句子' || exp.pos === '文章' || exp.pos === '短語') return;
                 let word = exp.word || '-';
                 if (!exp.word && exp.mean) {
                     const m = exp.mean.match(/【([^】]+)】/);
@@ -308,14 +317,6 @@
                 </tr>`;
             });
             tableHtml += '</table>';
-            
-            // Get translation - use dedicated translation field
-            let translation = s.translation || '';
-            if (!translation && s.explanation && s.explanation.length > 0) {
-                // Fallback: find sentence-level explanation
-                const fullSent = s.explanation.find(e => e.pos === '句子' || e.pos === '文章' || e.pos === '短語');
-                translation = fullSent ? fullSent.mean : '';
-            }
             
             const html = `
             <div class="sentence-card">
