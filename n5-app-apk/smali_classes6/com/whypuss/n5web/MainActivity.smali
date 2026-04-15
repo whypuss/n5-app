@@ -136,28 +136,27 @@
 
     move-result-object v0
 
-    if-eqz v0, :call_super
+    if-eqz v0, :cond_1
 
     invoke-virtual {v0}, Lcom/getcapacitor/Bridge;->getWebView()Landroid/webkit/WebView;
 
     move-result-object v0
 
-    if-eqz v0, :call_super
+    if-eqz v0, :cond_1
 
     .local v0, "webView":Landroid/webkit/WebView;
     invoke-virtual {v0}, Landroid/webkit/WebView;->canGoBack()Z
 
     move-result v1
 
-    if-eqz v1, :call_super
+    if-eqz v1, :cond_1
 
     invoke-virtual {v0}, Landroid/webkit/WebView;->goBack()V
 
     return-void
 
-    :call_super
     .end local v0    # "webView":Landroid/webkit/WebView;
-    invoke-super {p0}, Lcom/getcapacitor/BridgeActivity;->onBackPressed()V
+    :cond_1
     return-void
 .end method
 

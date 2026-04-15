@@ -338,7 +338,7 @@
         <div class="streak-cell">
             <div class="streak-icon">🎯</div>
             <div class="streak-num" id="streak-quiz">0</div>
-            <div class="streak-lbl">完成Quiz</div>
+            <div class="streak-lbl">完成測驗</div>
         </div>
     </div>
 
@@ -464,7 +464,7 @@
         <div class="tab-icon">🏠</div>首頁
     </div>
     <div class="tab-item" onclick="openQuickQuiz()">
-        <div class="tab-icon">🎯</div>Quiz
+        <div class="tab-icon">🎯</div>測驗
     </div>
     <div class="tab-item" onclick="setTab(this,'progress')">
         <div class="tab-icon">📊</div>統計
@@ -591,7 +591,7 @@ function renderAchievements(containerId) {
         {id:'streak7', name:'連續7天', icon:'🔥', cond: () => state.streak >= 7},
         {id:'words50', name:'詞彙50', icon:'📖', cond: () => state.totalLearned >= 50},
         {id:'words200', name:'詞彙200', icon:'📚', cond: () => state.totalLearned >= 200},
-        {id:'quiz20', name:'Quiz達人', icon:'🎯', cond: () => state.totalQuizzes >= 20},
+        {id:'quiz20', name:'測驗達人', icon:'🎯', cond: () => state.totalQuizzes >= 20},
         {id:'n5done', name:'N5完成', icon:'👑', cond: () => false},
     ];
     const el = document.getElementById(containerId);
@@ -823,15 +823,12 @@ function openDetail(idx) {
 
             // If word is empty (N2 data), try to find Japanese kanji from sequence
             if (!ja && mean) {
-                // Match Chinese mean to kanji in sequence
                 for (const [kanji, [hira, ro]] of Object.entries(seqMap)) {
                     if (mean.includes(kanji) || kanji.includes(mean)) {
                         ja = kanji;
                         break;
                     }
                 }
-                // Fallback: show Chinese if no kanji match
-                if (!ja) ja = mean;
             }
 
             const note = (e.pos ? e.pos + ' ' : '') + noteRaw;
@@ -849,7 +846,12 @@ function openDetail(idx) {
         tbody.innerHTML = `<tr><td colspan="3" style="color:#999;text-align:center;padding:16px">無詞彙數據</td></tr>`;
     }
 
-    document.getElementById('detail-trans').textContent = s.translation||'（無翻譯）';
+    let trans = s.translation || '';
+    if (!trans && s.explanation) {
+        const sentExp = s.explanation.find(e => e.pos === '句子' || e.pos === '文章' || e.pos === '短語');
+        if (sentExp) trans = sentExp.mean;
+    }
+    document.getElementById('detail-trans').textContent = trans || '（無翻譯）';
 
     const exEl = document.getElementById('detail-ex-section');
     if (s.example) {
@@ -915,14 +917,16 @@ function doQuiz(questions) {
 
         const q = questions[cur];
         const ja = buildJapanese(q);
-        // Build choices: correct translation + 3 wrong ones
+        // Use translation if available, else sentence-level mean, else explanation[0].note (N1/N2 fix)
+        const correctAnswer = q.translation || q.mean || (q.explanation && q.explanation.find(e => e.pos === '句子') && q.explanation.find(e => e.pos === '句子').mean) || (q.explanation && q.explanation[0] && q.explanation[0].note) || '';
+        // Build choices: correct answer + 3 wrong ones (filter by translation || mean)
         const allSents = Object.values(allData).flat();
         const wrongChoices = allSents
-            .filter(x => x.id !== q.id && x.translation)
+            .filter(x => x.id !== q.id && (x.translation || x.mean || (x.explanation && x.explanation.find(e => e.pos === '句子'))))
             .sort(() => Math.random() - 0.5)
             .slice(0, 3)
-            .map(x => x.translation);
-        const choices = [q.translation, ...wrongChoices].sort(() => Math.random() - 0.5);
+            .map(x => x.translation || x.mean || (x.explanation && x.explanation.find(e => e.pos === '句子') && x.explanation.find(e => e.pos === '句子').mean) || (x.explanation && x.explanation[0] && x.explanation[0].note) || '');
+        const choices = [correctAnswer, ...wrongChoices].sort(() => Math.random() - 0.5);
 
         progressEl.textContent = `第 ${cur + 1} / ${questions.length} 題`;
         questionEl.textContent = ja;
@@ -939,7 +943,7 @@ function doQuiz(questions) {
                     b.style.pointerEvents = 'none';
                     b.style.opacity = '0.5';
                 });
-                if (choice === q.translation) {
+                if (choice === correctAnswer) {
                     btn.style.background = '#d4edda';
                     btn.style.borderColor = '#28a745';
                     feedbackEl.textContent = '✅ 正確！';
@@ -952,7 +956,7 @@ function doQuiz(questions) {
                 } else {
                     btn.style.background = '#f8d7da';
                     btn.style.borderColor = '#dc3545';
-                    feedbackEl.textContent = `❌ 正確答案：${q.translation}`;
+                    feedbackEl.textContent = `❌ 正確答案：${correctAnswer}`;
                     feedbackEl.style.color = '#dc3545';
                     if (!state.words[q.id]) state.words[q.id] = {correct:0, wrong:0, status:'new', level:currentLevel};
                     state.words[q.id].wrong++;

@@ -1,5 +1,5 @@
 version: 3.0.1
-apkFileName: n5webapp-v1.apk
+apkFileName: n5webapp-v14.apk
 usesFramework:
   ids:
   - 1
