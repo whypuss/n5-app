@@ -18,3 +18,4 @@ __pycache__/
 # Static generated files
 site/static/
 site/diagnostics/
+n5-app-apk/build/

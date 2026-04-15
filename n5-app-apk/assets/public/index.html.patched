@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>日語學習 N5-App</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; padding-bottom: 70px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ========== HOME ========== */
+        .home-hero {
+            background: linear-gradient(135deg, #2980b9, #6dd5fa);
+            color: white;
+            padding: 30px 20px 20px;
+            text-align: center;
+        }
+        .home-hero h1 { font-size: 22px; margin-bottom: 4px; }
+        .home-hero p { font-size: 13px; opacity: 0.85; }
+
+        .xp-strip {
+            background: #fff;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .xp-level {
+            background: #2980b9;
+            color: #fff;
+            border-radius: 50%;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: bold;
+            flex-shrink: 0;
+        }
+        .xp-info { flex: 1; }
+        .xp-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .xp-bar-wrap { background: #eee; border-radius: 99px; height: 8px; overflow: hidden; }
+        .xp-bar-fill { background: linear-gradient(90deg, #2980b9, #6dd5fa); height: 100%; border-radius: 99px; transition: width 0.4s; }
+        .xp-num { font-size: 12px; color: #f39c12; font-weight: bold; white-space: nowrap; }
+
+        .streak-row {
+            display: flex;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .streak-cell {
+            flex: 1;
+            text-align: center;
+            padding: 14px 8px;
+            border-right: 1px solid #f0f0f0;
+        }
+        .streak-cell:last-child { border-right: none; }
+        .streak-icon { font-size: 20px; }
+        .streak-num { font-size: 18px; font-weight: bold; color: #333; margin-top: 2px; }
+        .streak-lbl { font-size: 10px; color: #aaa; }
+
+        .section-hdr {
+            padding: 16px 16px 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px 16px; }
+        .level-btn {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.12s;
+            border-left: 3px solid #2980b9;
+            text-align: center;
+        }
+        .level-btn:active { transform: scale(0.97); }
+        .level-btn.n4 { border-left-color: #27ae60; }
+        .level-btn.n3 { border-left-color: #e67e22; }
+        .level-btn.n2 { border-left-color: #8e44ad; }
+        .level-btn.n1 { border-left-color: #c0392b; }
+        .level-btn.hunter { border-left-color: #e91e63; }
+        .level-btn .kanji { font-size: 22px; font-weight: bold; color: #333; }
+        .level-btn .lbl { font-size: 12px; color: #888; margin-top: 2px; }
+        .level-btn .cnt { font-size: 10px; color: #2980b9; margin-top: 2px; font-weight: 600; }
+
+        .progress-card {
+            background: #fff;
+            margin: 0 16px 12px;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .progress-name { color: #555; }
+        .progress-pct { font-weight: bold; color: #2980b9; }
+        .progress-bar-wrap { background: #eee; border-radius: 99px; height: 6px; overflow: hidden; }
+        .progress-bar-fill { background: #2980b9; height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+        .reward-card {
+            background: #fff;
+            margin: 0 16px 12px;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .reward-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .reward-title { font-size: 15px; font-weight: bold; }
+        .coin-balance { font-size: 14px; color: #f39c12; font-weight: bold; }
+
+        .achieve-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .achieve-row::-webkit-scrollbar { display: none; }
+        .achieve-item { flex-shrink: 0; text-align: center; width: 70px; }
+        .achieve-badge {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #f5f5f5;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 4px;
+            border: 2px solid transparent;
+        }
+        .achieve-badge.earned { border-color: #f39c12; background: #fffbf0; }
+        .achieve-badge.locked { filter: grayscale(1); opacity: 0.4; }
+        .achieve-name { font-size: 10px; color: #888; }
+
+        /* ========== LIST ========== */
+        .header-bar {
+            background: #fff;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-btn { color: #2980b9; font-size: 17px; cursor: pointer; padding: 4px; }
+        .header-title { font-size: 16px; font-weight: 600; color: #333; flex: 1; }
+        .header-sub { font-size: 11px; color: #888; }
+
+        .filter-bar { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; background: #fff; border-bottom: 1px solid #e0e0e0; scrollbar-width: none; }
+        .filter-bar::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            flex-shrink: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+        }
+        .filter-btn.active { background: #2980b9; color: #fff; border-color: #2980b9; }
+
+        .sentence-list { padding: 12px 16px 80px; }
+        .sentence-item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 13px 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            cursor: pointer;
+            transition: transform 0.12s;
+            border-left: 3px solid #2980b9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sentence-item:active { transform: scale(0.98); }
+        .sentence-item.n4 { border-left-color: #27ae60; }
+        .sentence-item.n3 { border-left-color: #e67e22; }
+        .sentence-item.n2 { border-left-color: #8e44ad; }
+        .sentence-item.n1 { border-left-color: #c0392b; }
+        .sentence-item.hunter { border-left-color: #e91e63; }
+        .item-main { flex: 1; }
+        .item-header { display: flex; gap: 8px; margin-bottom: 4px; }
+        .item-id { font-size: 11px; color: #bbb; }
+        .item-cat { font-size: 10px; color: #2980b9; background: #eaf4fb; padding: 1px 7px; border-radius: 3px; }
+        .item-ja { font-size: 18px; color: #333; font-weight: 500; }
+        .item-status { font-size: 18px; margin-left: 10px; }
+
+        /* ========== DETAIL ========== */
+        .detail-card {
+            background: #fff;
+            border-radius: 14px;
+            margin: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .detail-topbar { padding: 14px 18px; border-bottom: 2px solid #2980b9; display: flex; justify-content: space-between; align-items: center; }
+        .detail-id { font-size: 14px; font-weight: bold; color: #333; }
+        .detail-cat { font-size: 12px; color: #2980b9; background: #eaf4fb; padding: 3px 10px; border-radius: 4px; font-weight: 600; }
+
+        .detail-japanese { text-align: center; font-size: 24px; color: #333; font-weight: bold; padding: 18px 16px 12px; }
+
+        .vert-section { background: #f8fbff; border: 2px solid #2980b9; border-radius: 10px; margin: 0 16px 18px; padding: 14px; overflow-x: auto; }
+        .vert-container { display: flex; justify-content: center; min-width: max-content; }
+        .vert-col { display: flex; flex-direction: column; align-items: center; min-width: 36px; padding: 0 3px; }
+        .vert-hira { font-size: 12px; color: #2980b9; font-weight: 600; line-height: 1.4; min-height: 16px; }
+        .vert-kanji { font-size: 20px; font-weight: bold; color: #333; line-height: 1.4; }
+        .vert-ro { font-size: 10px; color: #bbb; font-style: italic; line-height: 1.4; min-height: 14px; }
+
+        .grammar-section { padding: 0 16px 16px; }
+        .grammar-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; }
+        .grammar-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 2px solid #2980b9; border-radius: 8px; overflow: hidden; }
+        .grammar-table th { background: #2980b9; color: #fff; padding: 9px 12px; text-align: left; font-size: 11px; }
+        .grammar-table td { border: 1px solid #eee; padding: 9px 12px; background: #fafafa; }
+        .td-word { font-weight: bold; color: #333; }
+        .td-hira { color: #2980b9; font-size: 12px; }
+        .td-mean { color: #27ae60; font-size: 12px; }
+
+        .translation-section { padding: 14px 18px 18px; background: #eaf4fb; }
+        .trans-lbl { font-size: 10px; color: #888; margin-bottom: 5px; }
+        .trans-text { font-size: 17px; color: #333; font-weight: 600; }
+
+        .example-section { padding: 14px 18px; border-top: 1px solid #eee; }
+        .ex-lbl { font-size: 10px; color: #888; margin-bottom: 6px; }
+        .ex-ja { font-size: 15px; color: #2980b9; margin-bottom: 3px; }
+        .ex-cn { font-size: 13px; color: #777; }
+
+        .detail-nav { display: flex; gap: 10px; padding: 0 16px 80px; }
+        .nav-btn {
+            flex: 1;
+            background: #fff;
+            border: 2px solid #2980b9;
+            border-radius: 10px;
+            padding: 11px;
+            text-align: center;
+            font-size: 13px;
+            color: #2980b9;
+            cursor: pointer;
+        }
+        .nav-btn:active { background: #eaf4fb; }
+
+        /* ========== PROGRESS (Stats) ========== */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 12px; }
+        .stat-box {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .stat-n { font-size: 22px; font-weight: bold; color: #2980b9; }
+        .stat-l { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+        /* ========== REWARDS SHOP ========== */
+        .shop-card {
+            background: #fff;
+            border-radius: 12px;
+            margin: 0 16px 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .shop-icon { font-size: 30px; }
+        .shop-info { flex: 1; }
+        .shop-name { font-size: 14px; font-weight: 600; color: #333; }
+        .shop-desc { font-size: 11px; color: #999; margin-top: 2px; }
+        .shop-cost { font-size: 13px; color: #f39c12; font-weight: bold; margin-right: 8px; }
+        .shop-btn {
+            background: #2980b9;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .shop-btn:disabled { background: #ccc; }
+        .shop-btn.owned { background: #27ae60; }
+
+        /* ========== TAB BAR ========== */
+        .tab-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            z-index: 50;
+        }
+        .tab-item {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 2px; font-size: 10px; color: #aaa;
+            cursor: pointer; padding: 4px 10px;
+            transition: color 0.15s;
+        }
+        .tab-item.active { color: #2980b9; }
+        .tab-icon { font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+    <div class="home-hero">
+        <h1>📖 日語學習</h1>
+        <p>N5 / N4 / N3 / N2 / N1 離線版</p>
+    </div>
+
+    <div class="xp-strip">
+        <div class="xp-level" id="xp-level">1</div>
+        <div class="xp-info">
+            <div class="xp-label" id="xp-label">等級 1 · 0 XP</div>
+            <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+        </div>
+        <div class="xp-num" id="xp-num">0 XP</div>
+    </div>
+
+    <div class="streak-row">
+        <div class="streak-cell">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-num" id="streak-days">0</div>
+            <div class="streak-lbl">連續天數</div>
+        </div>
+        <div class="streak-cell">
+            <div class="streak-icon">📖</div>
+            <div class="streak-num" id="streak-learned">0</div>
+            <div class="streak-lbl">已學詞</div>
+        </div>
+        <div class="streak-cell">
+            <div class="streak-icon">🎯</div>
+            <div class="streak-num" id="streak-quiz">0</div>
+            <div class="streak-lbl">完成Quiz</div>
+        </div>
+    </div>
+
+    <div class="section-hdr">選擇級別</div>
+    <div class="level-grid">
+        <div class="level-btn n5" onclick="openList('n5')"><div class="kanji">N5</div><div class="lbl">初級</div><div class="cnt" id="cnt-n5">-</div></div>
+        <div class="level-btn n4" onclick="openList('n4')"><div class="kanji">N4</div><div class="lbl">初中級</div><div class="cnt" id="cnt-n4">-</div></div>
+        <div class="level-btn n3" onclick="openList('n3')"><div class="kanji">N3</div><div class="lbl">中級</div><div class="cnt" id="cnt-n3">-</div></div>
+        <div class="level-btn n2" onclick="openList('n2')"><div class="kanji">N2</div><div class="lbl">中上級</div><div class="cnt" id="cnt-n2">-</div></div>
+        <div class="level-btn n1" onclick="openList('n1')"><div class="kanji">N1</div><div class="lbl">上級</div><div class="cnt" id="cnt-n1">-</div></div>
+        <div class="level-btn hunter" onclick="openList('hunter')"><div class="kanji">🦷</div><div class="lbl">Hunter</div><div class="cnt" id="cnt-hunter">-</div></div>
+    </div>
+
+    <div class="section-hdr">學習進度</div>
+    <div class="progress-card" id="progress-card"></div>
+
+    <div class="section-hdr">🏆 成就</div>
+    <div class="reward-card">
+        <div class="achieve-row" id="achieve-row"></div>
+    </div>
+</div>
+
+<!-- LIST PAGE -->
+<div id="page-list" class="page">
+    <div class="header-bar">
+        <span class="back-btn" onclick="goBack()">←</span>
+        <div>
+            <div class="header-title" id="list-title">句子列表</div>
+            <div class="header-sub" id="list-subtitle"></div>
+        </div>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="sentence-list" id="sentence-list">
+        <div style="text-align:center;padding:40px;color:#999">載入中...</div>
+    </div>
+    <div id="pagination-ui"></div>
+</div>
+
+<!-- DETAIL PAGE -->
+<div id="page-detail" class="page">
+    <div class="header-bar">
+        <span class="back-btn" onclick="goBack()">←</span>
+        <div>
+            <div class="header-title" id="detail-title">詳情</div>
+            <div class="header-sub" id="detail-sub"></div>
+        </div>
+    </div>
+    <div class="detail-card">
+        <div class="detail-topbar">
+            <span class="detail-id" id="detail-id">#1</span>
+            <span class="detail-cat" id="detail-cat">-</span>
+        </div>
+        <div class="detail-japanese" id="detail-ja">-</div>
+        <div class="vert-section">
+            <div class="vert-container" id="detail-vert"></div>
+        </div>
+        <div class="grammar-section">
+            <div class="grammar-title">詞彙</div>
+            <table class="grammar-table"><thead><tr><th>詞</th><th>中文</th><th>解釋</th></tr></thead><tbody id="detail-tbody"></tbody></table>
+        </div>
+        <div class="translation-section">
+            <div class="trans-lbl">中文翻譯</div>
+            <div class="trans-text" id="detail-trans">-</div>
+        </div>
+        <div class="example-section" id="detail-ex-section" style="display:none">
+            <div class="ex-lbl">例句</div>
+            <div class="ex-ja" id="detail-ex-ja"></div>
+            <div class="ex-cn" id="detail-ex-cn"></div>
+        </div>
+    </div>
+    <div class="detail-nav">
+        <div class="nav-btn" id="nav-prev" onclick="navDetail(-1)">← 上一句</div>
+        <div class="nav-btn" id="nav-next" onclick="navDetail(1)">下一句 →</div>
+    </div>
+</div>
+
+<!-- PROGRESS PAGE -->
+<div id="page-progress" class="page">
+    <div class="header-bar">
+        <span class="back-btn" onclick="goBack()">←</span>
+        <div class="header-title">📊 學習統計</div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-box"><div class="stat-n" id="ps-learned">0</div><div class="stat-l">已學詞</div></div>
+        <div class="stat-box"><div class="stat-n" id="ps-accuracy">0%</div><div class="stat-l">正確率</div></div>
+        <div class="stat-box"><div class="stat-n" id="ps-streak">0</div><div class="stat-l">連續天</div></div>
+    </div>
+    <div class="progress-card" id="ps-progress"></div>
+</div>
+
+<!-- REWARDS PAGE -->
+<div id="page-rewards" class="page">
+    <div class="header-bar">
+        <span class="back-btn" onclick="goBack()">←</span>
+        <div class="header-title">🎁 獎勵中心</div>
+    </div>
+    <div style="text-align:center;padding:16px">
+        <div style="font-size:36px">😺</div>
+        <div style="font-size:16px;color:#f39c12;font-weight:bold;margin-top:4px" id="rewards-coins">🪙 0 硬幣</div>
+    </div>
+    <div class="section-hdr">🏆 成就</div>
+    <div class="reward-card"><div class="achieve-row" id="rewards-achieve"></div></div>
+    <div class="section-hdr">🎁 可兌換</div>
+    <div id="rewards-shop"></div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+    <div class="tab-item active" onclick="setTab(this,'home')">
+        <div class="tab-icon">🏠</div>首頁
+    </div>
+    <div class="tab-item" onclick="openQuickQuiz()">
+        <div class="tab-icon">🎯</div>Quiz
+    </div>
+    <div class="tab-item" onclick="setTab(this,'progress')">
+        <div class="tab-icon">📊</div>統計
+    </div>
+    <div class="tab-item" onclick="setTab(this,'rewards')">
+        <div class="tab-icon">🎁</div>獎勵
+    </div>
+</div>
+
+<script>
+// ===== DATA =====
+const LEVEL_FILES = {
+    n5: 'data/n5-v2-data.json',
+    n4: 'data/n4-v2-data.json',
+    n3: 'data/n3-v2-data.json',
+    n2: 'data/n2-data.json',
+    n1: 'data/n1-data.json',
+    hunter: 'data/hunter-data.json',
+};
+const LEVEL_NAMES = {
+    n5:'N5 初級', n4:'N4 初中級', n3:'N3 中級',
+    n2:'N2 中上級', n1:'N1 上級', hunter:'Hunter'
+};
+const LEVEL_COLORS = {
+    n5:'#2980b9', n4:'#27ae60', n3:'#e67e22',
+    n2:'#8e44ad', n1:'#c0392b', hunter:'#e91e63'
+};
+
+let allData = {};
+let currentLevel = null;
+let currentIndex = 0;
+let currentFilter = 'all';
+let currentPage = 1;
+const ITEMS_PER_PAGE = 20;
+
+// ===== STATE =====
+let state = {
+    xp: 0, level: 1, coins: 0, streak: 0,
+    totalLearned: 0, totalQuizzes: 0,
+    words: {}, // id -> {correct, wrong, status, level}
+    achievements: [],
+    inventory: [],
+    lastStudyDate: null,
+    quizHistory: [],
+};
+
+function saveState() { localStorage.setItem('n5app_state2', JSON.stringify(state)); }
+
+function loadState() {
+    const s = localStorage.getItem('n5app_state2');
+    if (s) {
+        const old = JSON.parse(s);
+        state = { ...state, ...old };
+    }
+    checkStreak();
+}
+
+function checkStreak() {
+    const today = new Date().toDateString();
+    if (state.lastStudyDate === today) return;
+    const y = new Date(); y.setDate(y.getDate()-1);
+    if (state.lastStudyDate !== y.toDateString() && state.lastStudyDate !== null) state.streak = 0;
+    state.lastStudyDate = today;
+}
+
+// ===== INIT =====
+async function init() {
+    loadState();
+    await Promise.all(
+        Object.entries(LEVEL_FILES).map(async ([lvl, file]) => {
+            try {
+                const r = await fetch(file);
+                const d = await r.json();
+                allData[lvl] = d.sentences || [];
+                document.getElementById('cnt-' + lvl).textContent = (d.sentences || []).length + '句';
+            } catch(e) {
+                allData[lvl] = [];
+                document.getElementById('cnt-' + lvl).textContent = '無';
+            }
+        })
+    );
+    updateHomeUI();
+    updateProgressUI();
+    updateRewardsUI();
+}
+
+// ===== HOME UI =====
+function updateHomeUI() {
+    const xpForLevel = state.level * 100;
+    const xpInLevel = state.xp % xpForLevel;
+    document.getElementById('xp-level').textContent = state.level;
+    document.getElementById('xp-label').textContent = `等級 ${state.level} · ${xpInLevel} XP`;
+    document.getElementById('xp-bar').style.width = (xpInLevel / xpForLevel * 100) + '%';
+    document.getElementById('xp-num').textContent = state.xp + ' XP';
+    document.getElementById('streak-days').textContent = state.streak;
+    document.getElementById('streak-learned').textContent = state.totalLearned;
+    document.getElementById('streak-quiz').textContent = state.totalQuizzes;
+
+    // Progress card
+    const levels = ['n5','n4','n3','n2','n1','hunter'];
+    const pc = document.getElementById('progress-card');
+    pc.innerHTML = levels.map(l => {
+        const total = (allData[l] || []).length;
+        const learned = Object.values(state.words).filter(w => w.level === l && w.status !== 'new').length;
+        const pct = total > 0 ? Math.round(learned / total * 100) : 0;
+        return `<div style="margin-bottom:10px">
+            <div class="progress-row">
+                <span class="progress-name" style="color:${LEVEL_COLORS[l]}">${LEVEL_NAMES[l]}</span>
+                <span class="progress-pct">${pct}%</span>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:${pct}%;background:${LEVEL_COLORS[l]}"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Achievements
+    renderAchievements('achieve-row');
+}
+
+function renderAchievements(containerId) {
+    const ACHIEVEMENTS = [
+        {id:'first', name:'初學者', icon:'🏆', cond: () => state.totalQuizzes >= 1},
+        {id:'streak7', name:'連續7天', icon:'🔥', cond: () => state.streak >= 7},
+        {id:'words50', name:'詞彙50', icon:'📖', cond: () => state.totalLearned >= 50},
+        {id:'words200', name:'詞彙200', icon:'📚', cond: () => state.totalLearned >= 200},
+        {id:'quiz20', name:'Quiz達人', icon:'🎯', cond: () => state.totalQuizzes >= 20},
+        {id:'n5done', name:'N5完成', icon:'👑', cond: () => false},
+    ];
+    const el = document.getElementById(containerId);
+    el.innerHTML = ACHIEVEMENTS.map(a => {
+        const earned = a.cond();
+        return `<div class="achieve-item">
+            <div class="achieve-badge ${earned ? 'earned' : 'locked'}">${a.icon}</div>
+            <div class="achieve-name">${a.name}</div>
+        </div>`;
+    }).join('');
+}
+
+// ===== PROGRESS UI =====
+function updateProgressUI() {
+    document.getElementById('ps-learned').textContent = state.totalLearned;
+    const tc = Object.values(state.words).reduce((s,w) => s+(w.correct||0), 0);
+    const tw = Object.values(state.words).reduce((s,w) => s+(w.wrong||0), 0);
+    const tt = tc+tw;
+    document.getElementById('ps-accuracy').textContent = tt > 0 ? Math.round(tc/tt*100)+'%' : '0%';
+    document.getElementById('ps-streak').textContent = state.streak;
+
+    const levels = ['n5','n4','n3','n2','n1','hunter'];
+    const pc = document.getElementById('ps-progress');
+    pc.innerHTML = levels.map(l => {
+        const total = (allData[l]||[]).length;
+        const learned = Object.values(state.words).filter(w=>w.level===l && w.status!=='new').length;
+        const pct = total>0 ? Math.round(learned/total*100) : 0;
+        return `<div style="margin-bottom:10px">
+            <div class="progress-row">
+                <span class="progress-name" style="color:${LEVEL_COLORS[l]}">${LEVEL_NAMES[l]}</span>
+                <span class="progress-pct">${learned}/${total}</span>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:${pct}%;background:${LEVEL_COLORS[l]}"></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ===== REWARDS UI =====
+function updateRewardsUI() {
+    document.getElementById('rewards-coins').textContent = '🪙 ' + state.coins + ' 硬幣';
+    renderAchievements('rewards-achieve');
+
+    const SHOP = [
+        {id:'f1', icon:'🪙', name:'金色頭像框', desc:'炫酷金色框', cost:300},
+        {id:'b1', icon:'🌟', name:'金星背景', desc:'醒目金色主題', cost:600},
+        {id:'u4', icon:'📚', name:'解鎖 N4', desc:'開通 N4 詞彙', cost:1500},
+    ];
+    const el = document.getElementById('rewards-shop');
+    el.innerHTML = SHOP.map(r => {
+        const owned = state.inventory.includes(r.id);
+        const can = state.coins >= r.cost && !owned;
+        return `<div class="shop-card">
+            <div class="shop-icon">${r.icon}</div>
+            <div class="shop-info">
+                <div class="shop-name">${r.name}</div>
+                <div class="shop-desc">${r.desc}</div>
+            </div>
+            <div class="shop-cost">${r.cost}</div>
+            <button class="shop-btn ${owned?'owned':''}" ${!can?'disabled':''} onclick="buyItem('${r.id}',${r.cost})">${owned?'已兌':'兌換'}</button>
+        </div>`;
+    }).join('');
+}
+
+function buyItem(id, cost) {
+    if (state.coins < cost || state.inventory.includes(id)) return;
+    state.coins -= cost;
+    state.inventory.push(id);
+    saveState();
+    updateRewardsUI();
+}
+
+// ===== LIST =====
+function openList(level) {
+    currentLevel = level;
+    currentIndex = 0;
+    currentFilter = 'all';
+    currentPage = 1;
+    document.getElementById('list-title').textContent = LEVEL_NAMES[level];
+    document.getElementById('list-subtitle').textContent = (allData[level]||[]).length + ' 句';
+    buildFilterBar();
+    renderList();
+    setTab(null, 'list');
+}
+
+function buildFilterBar() {
+    const sents = allData[currentLevel] || [];
+    const cats = [...new Set(sents.map(s => s.category||'其他'))].sort();
+    const bar = document.getElementById('filter-bar');
+    bar.innerHTML = `<button class="filter-btn active" onclick="filterList('all',this)">全部</button>` +
+        cats.map(c => `<button class="filter-btn" onclick="filterList('${c}',this)">${c}</button>`).join('');
+}
+
+function filterList(cat, btn) {
+    currentFilter = cat;
+    currentPage = 1;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+}
+
+function renderList() {
+    const sents = allData[currentLevel] || [];
+    const filtered = currentFilter==='all' ? sents : sents.filter(s=>(s.category||'')===currentFilter);
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
+    const el = document.getElementById('sentence-list');
+    if (!pageItems.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:#999">暫無內容</div>'; return; }
+    el.innerHTML = pageItems.map((s) => {
+        const idx = sents.indexOf(s);
+        const ja = buildJapanese(s);
+        const wstate = state.words[s.id];
+        const icon = wstate?.status==='mastered'?'⭐':wstate?.status==='review'?'✓':'○';
+        return `<div class="sentence-item ${currentLevel}" onclick="openDetail(${idx})">
+            <div class="item-main">
+                <div class="item-header">
+                    <span class="item-id">#${s.id||(idx+1)}</span>
+                    <span class="item-cat">${s.category||''}</span>
+                </div>
+                <div class="item-ja">${ja}</div>
+            </div>
+            <div class="item-status">${icon}</div>
+        </div>`;
+    }).join('');
+
+    // Pagination UI
+    const pg = document.getElementById('pagination-ui');
+    if (!pg) return;
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    const prevDis = currentPage <= 1 ? 'opacity:0.3;pointer-events:none' : '';
+    const nextDis = currentPage >= totalPages ? 'opacity:0.3;pointer-events:none' : '';
+    let btns = '';
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            btns += `<button class="pg-btn" data-page="${p}" style="min-width:34px;height:34px;border-radius:6px;border:1px solid ${p===currentPage?'#2980b9':'#ddd'};background:${p===currentPage?'#2980b9':'#fff'};color:${p===currentPage?'#fff':'#666'};font-size:13px;cursor:pointer;padding:0 6px">${p}</button>`;
+        } else if (p === currentPage - 3 || p === currentPage + 3) {
+            btns += `<span style="padding:0 4px;color:#999">…</span>`;
+        }
+    }
+    pg.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;flex-wrap:wrap">
+        <button class="pg-btn" data-page="${currentPage-1}" style="min-width:60px;height:34px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#2980b9;font-size:13px;cursor:pointer;${prevDis}">← 上一頁</button>
+        ${btns}
+        <button class="pg-btn" data-page="${currentPage+1}" style="min-width:60px;height:34px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#2980b9;font-size:13px;cursor:pointer;${nextDis}">下一頁 →</button>
+    </div><div style="text-align:center;font-size:12px;color:#888;padding-bottom:8px">第 ${currentPage} / ${totalPages} 頁，共 ${totalItems} 句</div>`;
+
+    // Delegate click — more reliable in Android WebView than inline onclick
+    pg.onclick = function(e) {
+        const btn = e.target.closest('.pg-btn');
+        if (!btn) return;
+        const p = parseInt(btn.getAttribute('data-page'));
+        if (!isNaN(p)) goToPage(p);
+    };
+}
+
+function goToPage(p) {
+    const sents = allData[currentLevel] || [];
+    const filtered = currentFilter==='all' ? sents : sents.filter(s=>(s.category||'')===currentFilter);
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    renderList();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ===== DETAIL =====
+function openDetail(idx) {
+    const sents = allData[currentLevel] || [];
+    if (idx<0||idx>=sents.length) return;
+    currentIndex = idx;
+    const s = sents[idx];
+    const color = LEVEL_COLORS[currentLevel];
+
+    document.getElementById('detail-title').textContent = LEVEL_NAMES[currentLevel];
+    document.getElementById('detail-sub').textContent = `${idx+1}/${sents.length}`;
+    document.getElementById('detail-id').textContent = '#'+(s.id||(idx+1));
+    document.getElementById('detail-cat').textContent = s.category||'';
+    document.getElementById('detail-ja').textContent = buildJapanese(s);
+
+    // Vertical
+    const seq = s.sequence||[];
+    const vertEl = document.getElementById('detail-vert');
+    if (seq.length>0) {
+        vertEl.innerHTML = seq.map(p=>`<div class="vert-col">
+            <div class="vert-hira">${p[1]||''}</div>
+            <div class="vert-kanji">${p[0]||''}</div>
+            <div class="vert-ro">${p[2]||''}</div>
+        </div>`).join('');
+    } else {
+        vertEl.innerHTML = (s.japanese||'').split('').map(c=>`<div class="vert-col">
+            <div class="vert-hira"></div><div class="vert-kanji">${c}</div><div class="vert-ro"></div>
+        </div>`).join('');
+    }
+
+    // Table — build word list directly from sequence
+    const tbody = document.getElementById('detail-tbody');
+    const seq = s.sequence || [];
+    const expl = s.explanation || [];
+
+    // Build a map from kanji -> explanation entry (for mean/note lookup)
+    const explMap = {};
+    let hasExpl = expl.length > 0 && expl.some(e => e.word || e.mean);
+    if (hasExpl) {
+        expl.forEach(e => {
+            if (e.word) explMap[e.word] = e;
+        });
+    }
+
+    // Build rows from sequence, skipping punctuation
+    const PUNCT = ['、','。','，','．','・','「','」','（','）','！','？','～','─','…','‥','•','・'];
+    let rows = [];
+    let i = 0;
+    while (i < seq.length) {
+        const p = seq[i];
+        const kanji = p[0] || '';
+        const hira = p[1] || '';
+        const ro = p[2] || '';
+        if (!kanji || PUNCT.includes(kanji)) { i++; continue; }
+
+        // Try to find explanation entry for this kanji/word
+        let mean = '';
+        let note = '';
+        let ja = kanji;
+
+        if (hasExpl && explMap[kanji]) {
+            ja = explMap[kanji].word || kanji;
+            mean = explMap[kanji].mean || '';
+            note = explMap[kanji].note || '';
+        } else {
+            // Fallback: look in explanation by meaning (mean)
+            const entry = expl.find(e => e.mean && (e.mean === kanji || e.word === kanji));
+            if (entry) {
+                ja = entry.word || kanji;
+                mean = entry.mean || '';
+                note = entry.note || '';
+            } else {
+                mean = ro || hira;  // show romaji/hiragana as the "meaning"
+            }
+        }
+
+        rows.push(`<tr>
+            <td class="td-word">${ja}</td>
+            <td class="td-hira">${mean}</td>
+            <td class="td-mean">${note}</td>
+        </tr>`);
+        i++;
+    }
+
+    // If no sequence rows, show explanation directly
+    if (rows.length === 0 && expl.length > 0) {
+        expl.forEach(e => {
+            rows.push(`<tr>
+                <td class="td-word">${e.word||''}</td>
+                <td class="td-hira">${e.mean||''}</td>
+                <td class="td-mean">${e.note||''}</td>
+            </tr>`);
+        });
+    }
+
+    if (rows.length > 0) {
+        tbody.innerHTML = rows.join('');
+    } else {
+        tbody.innerHTML = `<tr><td colspan="3" style="color:#999;text-align:center;padding:16px">無詞彙數據</td></tr>`;
+    }
+
+    document.getElementById('detail-trans').textContent = s.translation||'（無翻譯）';
+
+    const exEl = document.getElementById('detail-ex-section');
+    if (s.example) {
+        exEl.style.display='block';
+        document.getElementById('detail-ex-ja').textContent = s.example;
+        document.getElementById('detail-ex-cn').textContent = s.exampleTranslate||'';
+    } else { exEl.style.display='none'; }
+
+    document.getElementById('nav-prev').style.opacity = idx>0?'1':'0.3';
+    document.getElementById('nav-next').style.opacity = idx<sents.length-1?'1':'0.3';
+
+    // Track this word
+    if (!state.words[s.id]) state.words[s.id] = {correct:0, wrong:0, status:'new', level:currentLevel};
+    state.lastStudyDate = new Date().toDateString();
+    saveState();
+
+    showPage('detail');
+}
+
+function navDetail(dir) {
+    const newIdx = currentIndex + dir;
+    const total = (allData[currentLevel]||[]).length;
+    if (newIdx<0||newIdx>=total) return;
+    openDetail(newIdx);
+}
+
+// ===== QUICK QUIZ =====
+function openQuickQuiz() {
+    const all = Object.values(allData).flat();
+    if (!all.length) { alert('無數據'); return; }
+    const shuffled = [...all].sort(()=>Math.random()-0.5).slice(0,5);
+    doQuiz(shuffled);
+}
+
+function doQuiz(questions) {
+    let cur=0, correct=0;
+    const show = () => {
+        if (cur>=questions.length) {
+            const xp = correct*10;
+            const coins = correct*2;
+            state.xp += xp;
+            state.coins += coins;
+            state.totalQuizzes++;
+            if (state.streak>0||correct>0) state.streak++;
+            state.level = Math.floor(state.xp/100)+1;
+            saveState();
+            updateHomeUI();
+            alert(`🎉 完成！\n正確：${correct}/${questions.length}\n+${xp} XP\n+${coins} 🪙`);
+            return;
+        }
+        const q = questions[cur];
+        const ja = buildJapanese(q);
+        const choices = [q.translation, ...[...all].filter(x=>x.id!==q.id&&x.translation).slice(0,3).map(x=>x.translation)].sort(()=>Math.random()-0.5);
+        const ans = prompt(`題目 ${cur+1}/${questions.length}\n\n${ja}\n\n選擇意思：\n${choices.map((c,i)=>`${i+1}. ${c}`).join('\n')}\n\n輸入 1-4`);
+        if (!ans) return;
+        const idx = parseInt(ans)-1;
+        if (idx>=0&&idx<choices.length) {
+            if (choices[idx]===q.translation) {
+                correct++;
+                if (!state.words[q.id]) state.words[q.id]={correct:0,wrong:0,status:'new',level:currentLevel};
+                state.words[q.id].correct++;
+                state.words[q.id].status = state.words[q.id].correct>=5?'mastered':'review';
+                state.totalLearned = Object.values(state.words).filter(w=>w.status!=='new').length;
+            } else {
+                if (!state.words[q.id]) state.words[q.id]={correct:0,wrong:0,status:'new',level:currentLevel};
+                state.words[q.id].wrong++;
+                state.words[q.id].status='review';
+            }
+        }
+        saveState();
+        cur++;
+        show();
+    };
+    show();
+}
+
+// ===== NAVIGATION =====
+let navHistory = ['home'];
+
+function showPage(name, push=true) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    window.scrollTo(0,0);
+    if (push && navHistory[navHistory.length-1] !== name) {
+        navHistory.push(name);
+    }
+}
+
+function goBack() {
+    if (navHistory.length > 1) {
+        navHistory.pop();
+        const prev = navHistory[navHistory.length-1];
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById('page-'+prev).classList.add('active');
+        window.scrollTo(0,0);
+    }
+    // else: stay on home, don't exit
+}
+
+// Override hardware/software back button on Android
+document.addEventListener('backbutton', e => { e.preventDefault(); goBack(); });
+// Prevent browser swipe-to-go-back in WebView
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', e => {
+    e.preventDefault();
+    history.pushState(null, '', location.href);
+    goBack();
+});
+
+function setTab(el, name) {
+    document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    if (name==='progress') updateProgressUI();
+    if (name==='rewards') updateRewardsUI();
+    showPage(name);
+}
+
+function buildJapanese(s) {
+    if (!s) return '';
+    if (s.sequence&&s.sequence.length>0) return s.sequence.map(p=>p[0]).join('');
+    return s.japanese||'';
+}
+
+init();
+</script>
+</body>
+</html>
