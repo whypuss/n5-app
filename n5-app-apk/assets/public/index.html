@@ -390,6 +390,7 @@
         <div class="detail-topbar">
             <span class="detail-id" id="detail-id">#1</span>
             <span class="detail-cat" id="detail-cat">-</span>
+            <button id="audio-play-btn" onclick="playCurrentAudio()" style="margin-left:auto;background:#e8f4fd;border:1px solid #2980b9;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer;color:#2980b9">🔊 朗讀</button>
         </div>
         <div class="detail-japanese" id="detail-ja">-</div>
         <div class="vert-section">
@@ -534,6 +535,30 @@ function checkStreak() {
     const y = new Date(); y.setDate(y.getDate()-1);
     if (state.lastStudyDate !== y.toDateString() && state.lastStudyDate !== null) state.streak = 0;
     state.lastStudyDate = today;
+}
+
+// ===== AUDIO =====
+let _audioEl = null;
+function getAudioEl() {
+    if (!_audioEl) {
+        _audioEl = document.createElement('audio');
+        _audioEl.id = 'detail-audio';
+    }
+    return _audioEl;
+}
+
+function playAudio(level, id) {
+    const el = getAudioEl();
+    const src = `audio/${level}/${id}.mp3`;
+    el.src = src;
+    el.play().catch(() => {});
+}
+
+function playCurrentAudio() {
+    const sents = allData[currentLevel] || [];
+    if (currentIndex < 0 || currentIndex >= sents.length) return;
+    const s = sents[currentIndex];
+    playAudio(currentLevel, s.id || (currentIndex + 1));
 }
 
 // ===== INIT =====
@@ -937,6 +962,15 @@ function openDetail(idx) {
     saveState();
 
     showPage('detail');
+
+    // Audio button: only show for N5
+    const audioBtn = document.getElementById('audio-play-btn');
+    if (audioBtn) audioBtn.style.display = currentLevel === 'n5' ? '' : 'none';
+
+    // Auto-play audio for N5
+    if (currentLevel === 'n5') {
+        setTimeout(() => playCurrentAudio(), 300);
+    }
 }
 
 function navDetail(dir) {
