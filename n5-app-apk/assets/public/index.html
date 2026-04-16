@@ -427,6 +427,8 @@
         <div class="stat-box"><div class="stat-n" id="ps-streak">0</div><div class="stat-l">連續天</div></div>
     </div>
     <div class="progress-card" id="ps-progress"></div>
+    <div class="section-hdr" style="padding:16px 16px 8px;font-size:13px;color:#888">📜 最近學習（點擊可跳轉）</div>
+    <div class="progress-card" id="ps-history"></div>
 </div>
 
 <!-- REWARDS PAGE -->
@@ -509,6 +511,10 @@ let state = {
     inventory: [],
     lastStudyDate: null,
     quizHistory: [],
+    // Feature: 記住上次看到第幾句
+    lastSentence: null, // {level, id, idx}
+    // Feature: 學習歷史
+    learningHistory: [], // [{level, id, idx, ja, time}] — 最近50條
 };
 
 function saveState() { localStorage.setItem('n5app_state2', JSON.stringify(state)); }
@@ -629,6 +635,43 @@ function updateProgressUI() {
             </div>
         </div>`;
     }).join('');
+
+    // Feature: 學習歷史
+    const histEl = document.getElementById('ps-history');
+    if (histEl) {
+        const hist = state.learningHistory || [];
+        if (hist.length === 0) {
+            histEl.innerHTML = '<div style="text-align:center;color:#999;padding:16px">暫無學習記錄</div>';
+        } else {
+            const fmtTime = t => {
+                const d = new Date(t);
+                const now = new Date();
+                const diff = now - d;
+                if (diff < 60000) return '剛剛';
+                if (diff < 3600000) return Math.floor(diff/60000) + '分鐘前';
+                if (diff < 86400000 && d.toDateString() === now.toDateString()) return d.toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'});
+                return d.toLocaleDateString('zh-TW', {month:'numeric',day:'numeric'}) + ' ' + d.toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'});
+            };
+            histEl.innerHTML = hist.slice(0, 20).map(h => {
+                const lvlColor = LEVEL_COLORS[h.level] || '#888';
+                const lvlName = LEVEL_NAMES[h.level] || h.level;
+                return `<div class="history-item" onclick="resumeFromHistory('${h.level}',${h.idx})" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer">
+                    <span style="font-size:11px;color:#fff;background:${lvlColor};padding:2px 6px;border-radius:4px">${lvlName}</span>
+                    <span style="flex:1;font-size:14px;color:#333;overflow:hidden;text-overflow:ell;white-space:nowrap">${h.ja||''}</span>
+                    <span style="font-size:11px;color:#999">${fmtTime(h.time)}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+}
+
+// Feature: 從歷史記錄恢復到指定句子
+function resumeFromHistory(level, idx) {
+    openList(level);
+    currentIndex = idx;
+    currentPage = Math.floor(idx / ITEMS_PER_PAGE) + 1;
+    renderList();
+    openDetail(idx);
 }
 
 // ===== REWARDS UI =====
@@ -668,9 +711,23 @@ function buyItem(id, cost) {
 // ===== LIST =====
 function openList(level) {
     currentLevel = level;
-    currentIndex = 0;
+    // Feature: 如果有上次記錄，恢復到那個位置
+    if (state.lastSentence && state.lastSentence.level === level) {
+        const sents = allData[level] || [];
+        const savedIdx = state.lastSentence.idx;
+        // 確保索引在有效範圍內
+        if (savedIdx >= 0 && savedIdx < sents.length) {
+            currentIndex = savedIdx;
+            currentPage = Math.floor(savedIdx / ITEMS_PER_PAGE) + 1;
+        } else {
+            currentIndex = 0;
+            currentPage = 1;
+        }
+    } else {
+        currentIndex = 0;
+        currentPage = 1;
+    }
     currentFilter = 'all';
-    currentPage = 1;
     document.getElementById('list-title').textContent = LEVEL_NAMES[level];
     document.getElementById('list-subtitle').textContent = (allData[level]||[]).length + ' 句';
     buildFilterBar();
@@ -866,6 +923,17 @@ function openDetail(idx) {
     // Track this word
     if (!state.words[s.id]) state.words[s.id] = {correct:0, wrong:0, status:'new', level:currentLevel};
     state.lastStudyDate = new Date().toDateString();
+
+    // Feature: 記住最後位置
+    state.lastSentence = { level: currentLevel, id: s.id, idx: idx };
+
+    // Feature: 記錄學習歷史（最近50條，去重）
+    const histEntry = { level: currentLevel, id: s.id, idx: idx, ja: buildJapanese(s), time: Date.now() };
+    // 移除同一 level+id 的舊記錄
+    state.learningHistory = state.learningHistory.filter(h => !(h.level === currentLevel && h.id === s.id));
+    state.learningHistory.unshift(histEntry);
+    if (state.learningHistory.length > 50) state.learningHistory.pop();
+
     saveState();
 
     showPage('detail');
